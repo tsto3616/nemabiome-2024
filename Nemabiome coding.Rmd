@@ -1,0 +1,1601 @@
+library(readxl)
+library(tidyr)
+library(dplyr)
+library(vegan)
+library(tidyverse)
+library(ggforce)
+library("openxlsx")
+library(plyr)
+library(ggplot2)
+library(vegan)
+library(ggsignif)
+library(emmeans)
+library(janitor)
+library(ggpubr)
+
+#import the dataset (all ASVs), note the lab pooling is removed to simplify the pooling  code
+# note removed unidentified sequences
+All_ASVs<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/ASVs_raw_masterfiles.xlsx", sheet="All_minus_lab_pooling")
+head(All_ASVs)
+
+data_long<- gather(All_ASVs, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+#### now for bioinformatic pooling of 3 replicates- when the three PCR recations are added together and replaced with a zero if any of the 3 replicates return a zero 
+pc10<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 3) 
+
+pc10
+
+PC_sp10<- pc10 %>% select(Nematodes, Abundance)
+
+PC_sp10
+
+PC_sp10$Cow<-as.factor(PC_sp10$Cow)
+
+pc10<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp10, sum), PC_sp10, all.x = T)
+
+pc10
+
+write.xlsx(pc10, "First_bioinfo_2.xlsx")
+
+# now to import it and change it to a wide format
+ten_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/First_bioinfo_2.xlsx", col_names=TRUE)
+head(ten_bioinfo)
+
+pc_wide10<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = ten_bioinfo)
+
+pc_wide10
+
+write.xlsx(pc_wide10, "Pooling method 10 wide format.xlsx")
+
+###################################### 
+# now for pooling method 9
+#### now for bioinformatic pooling of 3 replicates- when the three PCR recations are added together and replaced with a zero if 2 of the 3 replicates return a zero 
+pc9<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc9
+
+PC_sp9<- pc9 %>% select(Nematodes, Abundance)
+
+PC_sp9
+
+PC_sp9$Cow<-as.factor(PC_sp9$Cow)
+
+pc9<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp9, sum), PC_sp9, all.x = T)
+
+pc9
+
+write.xlsx(pc9, "Pooling method 9 long.xlsx")
+
+# now to import it and change it to a wide format
+nine_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 9 long.xlsx", col_names=TRUE)
+head(nine_bioinfo)
+
+pc_wide9<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = nine_bioinfo)
+
+pc_wide9
+
+write.xlsx(pc_wide9, "Pooling method 9 wide format.xlsx")
+
+###################################### 
+# now for pooling method 8
+#### now for bioinformatic pooling of 3 replicates- when the three PCR recations are added together 
+pc8<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc8
+
+PC_sp8<- pc8 %>% select(Nematodes, Abundance)
+
+PC_sp8
+
+PC_sp8$Cow<-as.factor(PC_sp8$Cow)
+
+pc8<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp8, sum), PC_sp8, all.x = T)
+
+pc8
+
+write.xlsx(pc8, "Pooling method 8 long.xlsx")
+
+# now to import it and change it to a wide format
+eight_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 8 long.xlsx", col_names=TRUE)
+head(eight_bioinfo)
+
+pc_wide8<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = eight_bioinfo)
+
+pc_wide8
+
+write.xlsx(pc_wide8, "Pooling method 8 wide format.xlsx")
+
+###################################### 
+# now for pooling method 11
+#### now for bioinformatic pooling of PCR1 and 2 (additive), where total reads are added, no removal
+All_1and2<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/ASVs_raw_masterfiles.xlsx", sheet="1and2")
+head(All_1and2)
+
+data_long<- gather(All_1and2, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pc11<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc11
+
+PC_sp11<- pc11 %>% select(Nematodes, Abundance)
+
+PC_sp11
+
+PC_sp11$Cow<-as.factor(PC_sp11$Cow)
+
+pc11<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp11, sum), PC_sp11, all.x = T)
+
+pc11
+
+write.xlsx(pc11, "Pooling method 11 long.xlsx")
+
+# now to import it and change it to a wide format
+eleven_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 11 long.xlsx", col_names=TRUE)
+head(eleven_bioinfo)
+
+pc_wide11<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = eleven_bioinfo)
+
+pc_wide11
+
+write.xlsx(pc_wide11, "Pooling method 11 wide format.xlsx")
+
+###################################### 
+# now for pooling method 12
+#### now for bioinformatic pooling of PCR1 and 2 (subtractive), where total reads are added, and reads are removed if not present in both species
+pc12<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc12
+
+PC_sp12<- pc12 %>% select(Nematodes, Abundance)
+
+PC_sp12
+
+PC_sp12$Cow<-as.factor(PC_sp12$Cow)
+
+pc12<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp12, sum), PC_sp12, all.x = T)
+
+pc12
+
+write.xlsx(pc12, "Pooling method 12 long.xlsx")
+
+# now to import it and change it to a wide format
+twelve_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 12 long.xlsx", col_names=TRUE)
+head(twelve_bioinfo)
+
+pc_wide12<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = twelve_bioinfo)
+
+pc_wide12
+
+write.xlsx(pc_wide12, "Pooling method 12 wide format.xlsx")
+
+###################################### 
+# now for pooling method 13
+#### now for bioinformatic pooling of PCR1 and 3 (additive), where total reads are added, no removal
+All_1and3<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/ASVs_raw_masterfiles.xlsx", sheet="1and3")
+head(All_1and3)
+
+data_long<- gather(All_1and3, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pc13<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc13
+
+PC_sp13<- pc13 %>% select(Nematodes, Abundance)
+
+PC_sp13
+
+PC_sp13$Cow<-as.factor(PC_sp13$Cow)
+
+pc13<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp13, sum), PC_sp13, all.x = T)
+
+pc13
+
+write.xlsx(pc13, "Pooling method 13 long.xlsx")
+
+# now to import it and change it to a wide format
+thirteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 13 long.xlsx", col_names=TRUE)
+head(thirteen_bioinfo)
+
+pc_wide13<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = thirteen_bioinfo)
+
+pc_wide13
+
+write.xlsx(pc_wide13, "Pooling method 13 wide format.xlsx")
+
+###################################### 
+# now for pooling method 14
+#### now for bioinformatic pooling of PCR1 and 3 (subtractive), where total reads are added, and reads are removed if not present in both species
+pc14<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc14
+
+PC_sp14<- pc14 %>% select(Nematodes, Abundance)
+
+PC_sp14
+
+PC_sp14$Cow<-as.factor(PC_sp14$Cow)
+
+pc14<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp14, sum), PC_sp14, all.x = T)
+
+pc14
+
+write.xlsx(pc14, "Pooling method 14 long.xlsx")
+
+# now to import it and change it to a wide format
+forteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 14 long.xlsx", col_names=TRUE)
+head(forteen_bioinfo)
+
+pc_wide14<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = forteen_bioinfo)
+
+pc_wide14
+
+write.xlsx(pc_wide14, "Pooling method 14 wide format.xlsx")
+
+###################################### 
+# now for pooling method 15
+#### now for bioinformatic pooling of PCR2 and 3 (additive), where total reads are added, no removal
+All_2and3<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/ASVs_raw_masterfiles.xlsx", sheet="2and3")
+head(All_2and3)
+
+data_long<- gather(All_2and3, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pc15<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc15
+
+PC_sp15<- pc15 %>% select(Nematodes, Abundance)
+
+PC_sp15
+
+PC_sp15$Cow<-as.factor(PC_sp15$Cow)
+
+pc15<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp15, sum), PC_sp15, all.x = T)
+
+pc15
+
+write.xlsx(pc15, "Pooling method 15 long.xlsx")
+
+# now to import it and change it to a wide format
+fifthteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 15 long.xlsx", col_names=TRUE)
+head(fifthteen_bioinfo)
+
+pc_wide15<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = fifthteen_bioinfo)
+
+pc_wide15
+
+write.xlsx(pc_wide15, "Pooling method 15 wide format.xlsx")
+
+###################################### 
+# now for pooling method 16
+#### now for bioinformatic pooling of PCR2 and 3 (subtractive), where total reads are added, and reads are removed if not present in both species
+pc16<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc16
+
+PC_sp16<- pc16 %>% select(Nematodes, Abundance)
+
+PC_sp16
+
+PC_sp16$Cow<-as.factor(PC_sp16$Cow)
+
+pc16<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp16, sum), PC_sp16, all.x = T)
+
+pc16
+
+write.xlsx(pc16, "Pooling method 16 long.xlsx")
+
+# now to import it and change it to a wide format
+sixteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method 16 long.xlsx", col_names=TRUE)
+head(sixteen_bioinfo)
+
+pc_wide16<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = sixteen_bioinfo)
+
+pc_wide16
+
+write.xlsx(pc_wide16, "Pooling method 16 wide format.xlsx")
+
+###################################### 
+# now for pooling method 1-7 (lab pooling and replicates)
+#### no bioinformatic pooling, JUST reformating then to make them matchup with the other datasets. This is JUST for replicates and lab pooling
+All_all<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/ASVs_raw_masterfiles.xlsx", sheet="All_all_pooling")
+head(All_all)
+
+data_long<- gather(All_all, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pcall<- data_long %>%
+  group_by(Cow, Primer, "Pooling  method", Nematodes)
+
+pcall
+
+write.xlsx(pcall, "Pooling method all long.xlsx")
+
+# now to import it and change it to a wide format
+all_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Documents/Pooling method all long.xlsx", col_names=TRUE)
+head(all_bioinfo)
+
+pc_wide_all<-xtabs(Abundance ~ Nematodes +Primer+Cow+ Pooling, data = all_bioinfo)
+
+pc_wide_all
+
+write.xlsx(pc_wide_all, "Pooling method all (1-7) wide format.xlsx")
+
+#####################################
+# now for the merging of ALL the datasets above
+#####################################
+# transposed the data, added a primer and cow column
+# first we merge the 1-7 dataset with the 8 dataset and try and see if it worked
+# for some reason col_names doesnt work so added .name_repair=minimal which works 
+all_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method all (1-7) wide format.xlsx", col_names=TRUE, .name_repair="minimal") 
+head(all_bioinfo)
+
+eight_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 8 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(eight_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge1<- merge(all_bioinfo, eight_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge1[is.na(merge1)]<-0
+
+merge1
+
+write.xlsx(merge1, "merge1.xlsx")
+
+#####################################################
+nine_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 9 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(nine_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge2<- merge(merge1, nine_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge2[is.na(merge2)]<-0
+
+merge2
+
+write.xlsx(merge2, "merge2.xlsx")
+
+#####################################################
+ten_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 10 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(ten_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge3<- merge(merge2, ten_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge3[is.na(merge3)]<-0
+
+merge3
+
+write.xlsx(merge3, "merge3.xlsx")
+
+#####################################################
+eleven_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 11 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(eleven_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge4<- merge(merge3, eleven_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge4[is.na(merge4)]<-0
+
+merge4
+
+write.xlsx(merge4, "merge4.xlsx")
+
+#####################################################
+twelve_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 12 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(twelve_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge5<- merge(merge4, twelve_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge5[is.na(merge5)]<-0
+
+merge5
+
+write.xlsx(merge5, "merge5.xlsx")
+
+#####################################################
+thirteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 13 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(thirteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge6<- merge(merge5, thirteen_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge6[is.na(merge6)]<-0
+
+merge6
+
+write.xlsx(merge6, "merge6.xlsx")
+
+#####################################################
+forteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 14 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(forteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge7<- merge(merge6, forteen_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge7[is.na(merge7)]<-0
+
+merge7
+
+write.xlsx(merge7, "merge7.xlsx")
+
+#####################################################
+fifthteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 15 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(fifthteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge8<- merge(merge7, fifthteen_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge8[is.na(merge8)]<-0
+
+merge8
+
+write.xlsx(merge8, "merge8.xlsx")
+
+#####################################################
+sixteen_bioinfo<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Scratch excel files (all) new/Pooling method 16 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(sixteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge9<- merge(merge8, sixteen_bioinfo, all.x=TRUE, all.y=TRUE)
+merge9[is.na(merge9)]<-0
+
+merge9
+
+write.xlsx(merge9, "merge9.xlsx")
+
+#################################################################################
+# First we need to apply the raw cut off levels to the data:
+raw<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/raw_copy_numbers.xlsx", col_names=TRUE, .name_repair="minimal")
+head(raw)
+
+# now to set our cut offs:
+raw[raw <= 1] <- 0
+
+write.csv(raw, "copy_threshold_1.csv")
+
+# now for the 5 read cut off:
+raw[raw <= 5] <- 0
+
+write.csv(raw, "copy_threshold_5.csv")
+
+# now for the 100 read cut off:
+raw[raw <= 100] <- 0
+
+write.csv(raw, "copy_threshold_100.csv")
+
+# now for the 1000 read cut off:
+raw[raw <= 1000] <- 0
+
+write.csv(raw, "copy_threshold_1000.csv")
+
+# these csv files were merged in excel to produce "raw_cut_off_master_file.xlsx"
+ASV_cut<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/raw_cut_off_master_file.xlsx", col_names=TRUE,.name_repair="minimal")
+str(ASV_cut)
+head(ASV_cut)
+tail(ASV_cut)
+
+# this is to single out the replicates and to put them into a NEMA1 v NEMA2 comparison based on species richness
+ASV_P1<- subset(ASVs_cut, Pooling.method== "P1")
+ASV_P2<- subset(ASVs_cut, Pooling.method== "P2")
+ASV_P3<- subset(ASVs_cut, Pooling.method== "P3")
+
+#this is to merge the datasets
+ASVs_P1_P3<- rbind(ASV_P1, ASV_P2, ASV_P3)
+
+richness = function(x){
+  return(sum(x>0))}
+
+ASVs_P1_P3$Richness = apply(ASVs_P1_P3[,-(1:4)],1,richness)
+
+# just to make sure we have richness
+head(ASVs_P1_P3$Richness)
+tail(ASVs_P1_P3$Richness)
+
+write.xlsx(ASVs_P1_P3, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/nemabiome_github/ASV_richness_raw_cut_off_new.xlsx") 
+
+#now just remove all the ASV data to just keep the richness and then you have a functional richness table that can be used to create the graphs below (note the shared primer richness was calculated by hand in excel, by counting any ASVs shared by both primers for any of the three replicates- in otherwords it is purely a description of the primers NOT replicates or pooling)
+ASVs_cut_primer<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/nemabiome_github/coverage/primers_and_replicates_raw_ASVs.xlsx", col_names=TRUE)
+str(ASVs_cut_primer)
+head(ASVs_cut_primer)
+tail(ASVs_cut_primer)
+
+# this is to see if there is significant variation across the different cut offs
+kruskal.test(Richness ~ Raw.cut.off, data=ASVs_cut_primer)
+# this is well below 0.05 for a p value so lets move on!
+
+ggplot(data = ASVs_cut_primer, aes(x=Raw.cut.off, y=Richness)) +
+  geom_boxplot(aes(color = Raw.cut.off), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Raw.cut.off))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + labs(x="Cow sampled") + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000")) +scale_colour_discrete(limits=c("All reads", "1", "5", "100", "1000")) + labs(x="Copy thresholds", colour="Copy thresholds", y="ASV richness") + stat_compare_means()
+  
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_ASV_richness.jpeg", width=10, height=8)
+
+# now for the primers and raw cut off
+kruskal.test(Richness ~ Primers, data=ASVs_cut_primer)
+
+ggplot(data = ASVs_cut_primer, aes(x=Raw.cut.off, y=Richness)) +
+  geom_boxplot(aes(color = Primers), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Primers))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + labs(x="Copy thresholds", y="ASV richness") + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000"))
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_ASV_primer_richness.jpeg", width=10, height=8)
+
+# now lets look at the richness of the ASVs under the bioinformatic pooling methods
+ASVs_cut_rich<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/nemabiome_github/coverage/ASV_richness_cut_new.xlsx", col_names=TRUE)
+str(ASVs_cut_rich)
+head(ASVs_cut_rich)
+tail(ASVs_cut_rich)
+
+ASV_P8<- subset(ASVs_cut_rich, Pooling.method== "P8")
+ASV_P9<- subset(ASVs_cut_rich, Pooling.method== "P9")
+ASV_P10<- subset(ASVs_cut_rich, Pooling.method== "P10")
+
+head(ASV_P8)
+
+#this is to merge the datasets
+ASVs_P8_P10<- rbind(ASV_P8, ASV_P9, ASV_P10)
+  
+# I think get rid of this line of coding ASVs_P8_P10$richness = apply(ASVs_P8_P10[,-(1:4)],1,richness)
+
+head(ASVs_P8_P10$richness)
+head(ASVs_P8_P10)
+
+ASVs_P8_P10$Pooling.method<- factor(ASVs_P8_P10$Pooling.method, level=c("P8", "P9","P10"))
+
+kruskal.test(richness ~ Pooling.method, data=ASVs_P8_P10)
+
+ggplot(data = ASVs_P8_P10, aes(x=raw.cut.off, y=richness)) +
+  geom_boxplot(aes(color = Pooling.method), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Pooling.method))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000")) + scale_colour_discrete(limits=c("P8", "P9", "P10"))+labs(x="Copy thresholds", colour = "Pooling method", y="ASV richness")
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_ASV_P8-P10_richness.jpeg", width=10, height=8)
+
+# now for the ASV richness of lab pooling compared with the additive pooled method
+ASV_P8<- subset(ASVs_cut_rich, Pooling.method== "P8")
+ASV_P4<- subset(ASVs_cut_rich, Pooling.method== "P4")
+ASV_P5<- subset(ASVs_cut_rich, Pooling.method== "P5")
+ASV_P6<- subset(ASVs_cut_rich, Pooling.method== "P6")
+ASV_P7<- subset(ASVs_cut_rich, Pooling.method== "P7")
+
+ASVs_P4_P8<- rbind(ASV_P4, ASV_P5, ASV_P6, ASV_P7, ASV_P8)
+
+tail(ASVs_P4_P8)
+
+ASVs_P4_P8$Pooling.method<- factor(ASVs_P4_P8$Pooling.method, level=c("P4", "P5","P6", "P7", "P8"))
+
+kruskal.test(richness ~ Pooling.method, data=ASVs_P4_P8)
+
+ggplot(data = ASVs_P4_P8, aes(x=raw.cut.off, y=richness)) +
+  geom_boxplot(aes(color = Pooling.method), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Pooling.method))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000")) + scale_colour_discrete(limits=c("P4", "P5","P6", "P7", "P8"))+labs(x="Copy thresholds", colour = "Pooling method", y="ASV richness")
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_ASV_P4-P8_richness.jpeg", width=10, height=8)
+
+# now lets try play around with species richness:
+Merging_df<-as.data.frame(ASV_cut)
+
+Merging_df
+
+df<-as.data.frame(lapply(split.default(Merging_df, names(Merging_df)), function(x) Reduce(`+`, x)))
+
+head(df)
+tail(df)
+
+df$Richness = apply(df[,-(1:4)],1,richness)
+
+write.xlsx(df, "Species richness template.xlsx")
+
+Species.rich<-read_xlsx("Species richness template.xlsx")
+
+# this is to see if there is significant variation across the different cut offs for the different species
+kruskal.test(Richness ~ Raw.cut.off, data=Species.rich)
+# this is well below 0.05 for a p value so lets move on!
+
+ggplot(data = Species.rich, aes(x=Raw.cut.off, y=Richness)) +
+  geom_boxplot(aes(color = Raw.cut.off), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Raw.cut.off))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + labs(x="Cow sampled") + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000")) +scale_colour_discrete(limits=c("All reads", "1", "5", "100", "1000")) + labs(x="Copy thresholds", colour="Copy thresholds", y="Species richness") 
+  
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_Species_richness.jpeg", width=10, height=8)
+
+# now for the primers and raw cut off
+kruskal.test(Richness ~ Primer, data=Species.rich)
+
+ggplot(data = Species.rich, aes(x=Raw.cut.off, y=Richness)) +
+  geom_boxplot(aes(color = Primer), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Primer))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + labs(x="Copy thresholds", y="ASV richness") + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000"))
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_species_primer_richness.jpeg", width=10, height=8)
+
+species_P8<- subset(Species.rich, Pooling.method== "P8")
+species_P9<- subset(Species.rich, Pooling.method== "P9")
+species_P10<- subset(Species.rich, Pooling.method== "P10")
+
+#this is to merge the datasets
+Species_P8_P10<- rbind(species_P8, species_P9, species_P10
+
+head(Species_P8_P10$richness)
+head(Species_P8_P10)
+
+Species_P8_P10$Pooling.method<- factor(Species_P8_P10$Pooling.method, level=c("P8", "P9","P10"))
+
+kruskal.test(Richness ~ Pooling.method, data=Species_P8_P10)
+
+ggplot(data = Species_P8_P10, aes(x=Raw.cut.off, y=Richness)) +
+  geom_boxplot(aes(color = Pooling.method), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Pooling.method))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000")) + scale_colour_discrete(limits=c("P8", "P9", "P10"))+labs(x="Copy thresholds", colour = "Pooling method", y="ASV richness")
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_species_P8-P10_richness.jpeg", width=10, height=8)
+
+# now for the species richness of lab pooling compared with the additive pooled method
+Species_P8<- subset(Species.rich, Pooling.method== "P8")
+Species_P4<- subset(Species.rich, Pooling.method== "P4")
+Species_P5<- subset(Species.rich, Pooling.method== "P5")
+Species_P6<- subset(Species.rich, Pooling.method== "P6")
+Species_P7<- subset(Species.rich, Pooling.method== "P7")
+
+species_P4_P8<- rbind(Species_P4, Species_P5, Species_P6, Species_P7, Species_P8)
+
+tail(species_P4_P8)
+
+species_P4_P8$Pooling.method<- factor(species_P4_P8$Pooling.method, level=c("P4", "P5","P6", "P7", "P8"))
+
+kruskal.test(Richness ~ Pooling.method, data=species_P4_P8)
+
+ggplot(data = ASVs_P4_P8, aes(x=raw.cut.off, y=richness)) +
+  geom_boxplot(aes(color = Pooling.method), width = 0.5, size = 0.4, position = position_dodge(0.8)) +
+  geom_point(position = position_dodge(0.8), 
+             aes(group = fct_rev(factor(Pooling.method))), shape = 21) +
+  theme_classic() + theme(axis.text.x=element_text (angle=-90)) + scale_x_discrete(limits=c("All reads", "1", "5", "100", "1000")) + scale_colour_discrete(limits=c("P4", "P5","P6", "P7", "P8"))+labs(x="Copy thresholds", colour = "Pooling method", y="ASV richness")
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/raw_cut_off_ASV_P4-P8_richness.jpeg", width=10, height=8)
+
+# now lets do Jacc for the cut offs
+ASV_cut<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/raw_cut_off_master_file.xlsx", col_names=TRUE,.name_repair="minimal")
+str(ASV_cut)
+head(ASV_cut)
+tail(ASV_cut)
+
+ASV_cut<-adorn_percentages(ASV_cut, denominator="row", na.rm=TRUE)
+
+ASV_P1<- subset(ASV_cut, Pooling.method== "P1")
+ASV_P2<- subset(ASV_cut, Pooling.method== "P2")
+ASV_P3<- subset(ASV_cut, Pooling.method== "P3")
+
+ASVs_P1_P3<- rbind(ASV_P1, ASV_P2, ASV_P3)
+
+com = ASVs_P1_P3[,5:ncol(ASVs_P1_P3)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=TRUE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = ASVs_P1_P3$Cow
+data.scores$Primer = ASVs_P1_P3$Primer
+data.scores$Pooling.method = ASVs_P1_P3$Pooling.method
+data.scores$Raw.cut.off = ASVs_P1_P3$Raw.cut.off
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Raw.cut.off<-as.factor(data.scores$Raw.cut.off)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Raw.cut.off, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", shape= "Primers", colour = "Copy threshold", y = "NMDS2", linetype="Cow sampled")+ labs(title="Stress value 0.114") +stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) +  scale_colour_discrete(limits = c("All reads", "1", "5", "100", "1000"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/first.jaccard_NMDS_percent_Cut.off_ASV_Cow_primer_P1_P3.jpeg", width=10, height=8)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = ASVs_P1_P3$Cow
+data.scores$Primer = ASVs_P1_P3$Primer
+data.scores$Pooling.method = ASVs_P1_P3$Pooling.method
+data.scores$Raw.cut.off = ASVs_P1_P3$Raw.cut.off
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Raw.cut.off<-as.factor(data.scores$Raw.cut.off)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Raw.cut.off, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Copy threshold", y = "NMDS2", linetype="Cow sampled")+ labs(title="Stress value 0.019") +stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) +  scale_colour_discrete(limits = c("All reads", "1", "5", "100", "1000"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/5B.Bray_NMDS_Cut.off_ASV_Cow_primer_percentage.jpeg", width=10, height=8)
+
+# now for it merged
+species<- subset(ASV_cut, Raw.cut.off== "All reads")
+
+Merging_df<-as.data.frame(species)
+
+Merging_df
+
+df<-as.data.frame(lapply(split.default(Merging_df, names(Merging_df)), function(x) Reduce(`+`, x)))
+
+head(df)
+tail(df)
+
+#just to reorder the columns so can remove the factors without removing the species
+write.xlsx(df, "merged ASVs raw cut off.xlsx")
+
+df<-read_excel("merged ASVs raw cut off.xlsx", col_names=TRUE, .name_repair="minimal")
+head(df)
+
+# now to set our cut offs for the species:
+df[df <= 1] <- 0
+
+write.csv(df, "copy_threshold_1.csv")
+
+# now for the 5 read cut off:
+df[df <= 5] <- 0
+
+write.csv(df, "copy_threshold_5.csv")
+
+# now for the 100 read cut off:
+df[df <= 100] <- 0
+
+write.csv(df, "copy_threshold_100.csv")
+
+# now for the 1000 read cut off:
+df[df <= 1000] <- 0
+
+write.csv(df, "copy_threshold_1000.csv")
+
+# now to merged the thresholds and put it into one and then import it into R
+df<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/nemabiome_github/copy_threshold_species.xlsx", col_names=TRUE,.name_repair="minimal") 
+
+pc<-adorn_percentages(df, denominator="row", na.rm=TRUE)
+
+head(pc)
+
+com = df[,5:ncol(pc)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=TRUE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = df$Cow
+data.scores$Primer = df$Primer
+data.scores$Pooling.method = df$Pooling.method
+data.scores$Raw.cut.off = df$Raw.cut.off
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Raw.cut.off<-as.factor(data.scores$Raw.cut.off)
+
+data.scores$Pooling.method <- factor(data.scores$Pooling.method, levels = c("P4", "P5", "P6", "P7", "P8"))
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Raw.cut.off, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", linetype="Cow sampled", shape="Primers", colour = "Copy threshold", y = "NMDS2")+ labs(title="Stress value 0.018") +stat_ellipse(geom="path", aes(linetype=Cow), lwd=1)+ scale_colour_discrete(limits = c("All reads", "1", "5", "100", "1000")) 
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/5C_Jaccard_NMDS_species_Cut.off_Cow_primer.jpeg", width=10, height=8)
+
+# now for the same just with bray
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = df$Cow
+data.scores$Primer = df$Primer
+data.scores$Pooling.method = df$Pooling.method
+data.scores$Raw.cut.off = df$Raw.cut.off
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Raw.cut.off<-as.factor(data.scores$Raw.cut.off)
+
+data.scores$Pooling.method <- factor(data.scores$Pooling.method, levels = c("P4", "P5", "P6", "P7", "P8"))
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Raw.cut.off, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", linetype="Cow sampled", shape="Primers", colour = "Copy threshold", y = "NMDS2")+ labs(title="Stress value 0.088") +stat_ellipse(geom="path", aes(linetype=Cow), lwd=1)+ scale_colour_discrete(limits = c("All reads", "1", "5", "100", "1000")) 
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/5D_bray_NMDS_species_Cut.off_Cow_primer.jpeg", width=10, height=8)
+
+################################################################################
+#first we need to try and create the data for each threshold into one graph so can compare the data. This is all species data
+data<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/raw_copy_numbers.xlsx", col_names=TRUE, .name_repair="minimal")
+str(data)
+head(data)
+
+data2<-adorn_percentages(data, denominator="row", na.rm=TRUE)
+
+head(data2)
+
+# now we put it all into percentages to compare it all
+write.xlsx(data2, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/all_reads.xlsx")
+
+# now the 0.05% cut off 
+data2[data2 <= 0.0005] <- 0
+
+pc<-adorn_percentages(data2, denominator="row", na.rm=TRUE)
+
+pc[is.na(pc)] <- 0
+
+write.xlsx(pc, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/0.05_cut_off_scrap.xlsx")
+
+# now the 0.5% cut off
+data2[data2 <= 0.005] <- 0
+
+pc2<-adorn_percentages(data2, denominator="row", na.rm=TRUE)
+
+pc2[is.na(pc2)] <- 0
+
+write.xlsx(pc2, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/0.5_cut_off_scrap.xlsx")
+
+# now the 1% cut off
+data2[data2 <= 0.01] <- 0
+
+pc3<-adorn_percentages(data2, denominator="row", na.rm=TRUE)
+
+pc3[is.na(pc3)] <- 0
+
+write.xlsx(pc3, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/1_cut_off_scrap.xlsx")
+
+# now the 2% cut off
+data2[data2 <= 0.02] <- 0
+
+pc4<-adorn_percentages(data2, denominator="row", na.rm=TRUE)
+
+pc4[is.na(pc4)] <- 0
+
+write.xlsx(pc4, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/2_cut_off_scrap.xlsx")
+
+# now merge the excel files by hand in excel
+
+percent<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Nemabiome_new/Percentage threshold master sheet.xlsx", col_names=TRUE, .name_repair="minimal")
+str(percent)
+head(percent)
+tail(percent)
+
+percent$Threshold <- as.factor(percent$Threshold)
+
+ASV_P8<- subset(percent, Pooling.method== "P8")
+ASV_P4<- subset(percent, Pooling.method== "P4")
+ASV_P5<- subset(percent, Pooling.method== "P5")
+ASV_P6<- subset(percent, Pooling.method== "P6")
+ASV_P7<- subset(percent, Pooling.method== "P7")
+
+# Will use this later
+ASVs_P4_P8<- rbind(ASV_P4, ASV_P5, ASV_P6, ASV_P7, ASV_P8)
+
+com = percent[,5:ncol(percent)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=TRUE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = percent$Cow
+data.scores$Primer = percent$Primer
+data.scores$Pooling.method = percent$Pooling.method
+data.scores$Threshold = percent$Threshold
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Threshold, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank())  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + 
+    labs(x = "NMDS1", colour = "Threshold", y = "NMDS2") + labs(title="Stress value 0.104") +  scale_colour_discrete(limits = c("All", "0.05%", "0.5%", "1%", "2%"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/6A_threshold_Cow_primer_bray_NMDS.jpeg", width=10, height=8)
+
+# now for the jaccard pooling method stuff
+com = ASVs_P4_P8[,5:ncol(ASVs_P4_P8)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=TRUE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = ASVs_P4_P8$Cow
+data.scores$Primer = ASVs_P4_P8$Primer
+data.scores$Pooling.method = ASVs_P4_P8$Pooling.method
+data.scores$Threshold = ASVs_P4_P8$Threshold
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Pooling.method, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank())  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + 
+    labs(x = "NMDS1", colour = "Pooling method", y = "NMDS2") + labs(title="Stress value 0.108") #+  scale_colour_discrete(limits = c("All", "0.05%", "0.5%", "1%", "2%"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/7A_P4_P8_Cow_primer_bray_NMDS.jpeg", width=10, height=8)
+
+ASV_P8<- subset(percent, Pooling.method== "P8")
+ASV_P9<- subset(percent, Pooling.method== "P9")
+ASV_P10<- subset(percent, Pooling.method== "P10")
+
+ASVs_P8_P10<- rbind(ASV_P8, ASV_P9, ASV_P10)
+
+com = ASVs_P8_P10[,5:ncol(ASVs_P8_P10)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=TRUE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = ASVs_P8_P10$Cow
+data.scores$Primer = ASVs_P8_P10$Primer
+data.scores$Pooling.method = ASVs_P8_P10$Pooling.method
+data.scores$Threshold = ASVs_P8_P10$Threshold
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Pooling.method, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank())  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + 
+    labs(x = "NMDS1", colour = "Pooling method", y = "NMDS2") + labs(title="Stress value 0.097") +  scale_colour_discrete(limits = c("P8", "P9", "P10"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/8A_Cow_primer_Jaccard_NMDS.jpeg", width=10, height=8)
+
+# now for the bray stuff
+percent<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Nemabiome_new/Percentage threshold master sheet.xlsx", col_names=TRUE, .name_repair="minimal")
+str(percent)
+head(percent)
+tail(percent)
+
+percent$Threshold <- as.factor(percent$Threshold)
+
+ASV_P8<- subset(percent, Pooling.method== "P8")
+ASV_P4<- subset(percent, Pooling.method== "P4")
+ASV_P5<- subset(percent, Pooling.method== "P5")
+ASV_P6<- subset(percent, Pooling.method== "P6")
+ASV_P7<- subset(percent, Pooling.method== "P7")
+
+# Will use this later
+ASVs_P4_P8<- rbind(ASV_P4, ASV_P5, ASV_P6, ASV_P7, ASV_P8)
+
+com = percent[,5:ncol(percent)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = percent$Cow
+data.scores$Primer = percent$Primer
+data.scores$Pooling.method = percent$Pooling.method
+data.scores$Threshold = percent$Threshold
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Threshold, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank())  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + 
+    labs(x = "NMDS1", colour = "Threshold", y = "NMDS2") + labs(title="Stress value 0.020") +  scale_colour_discrete(limits = c("All", "0.05%", "0.5%", "1%", "2%"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/6B_threshold_Cow_primer_bray_NMDS.jpeg", width=10, height=8)
+
+# now for the bray pooling method stuff
+com = ASVs_P4_P8[,5:ncol(ASVs_P4_P8)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = ASVs_P4_P8$Cow
+data.scores$Primer = ASVs_P4_P8$Primer
+data.scores$Pooling.method = ASVs_P4_P8$Pooling.method
+data.scores$Threshold = ASVs_P4_P8$Threshold
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Pooling.method, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank())  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + 
+    labs(x = "NMDS1", colour = "Pooling method", y = "NMDS2") + labs(title="Stress value 0.021") #+  scale_colour_discrete(limits = c("All", "0.05%", "0.5%", "1%", "2%"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/7B_P4_P8_Cow_primer_bray_NMDS.jpeg", width=10, height=8)
+
+ASV_P8<- subset(percent, Pooling.method== "P8")
+ASV_P9<- subset(percent, Pooling.method== "P9")
+ASV_P10<- subset(percent, Pooling.method== "P10")
+
+ASVs_P8_P10<- rbind(ASV_P8, ASV_P9, ASV_P10)
+
+com = ASVs_P8_P10[,5:ncol(ASVs_P8_P10)]
+head(com)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = ASVs_P8_P10$Cow
+data.scores$Primer = ASVs_P8_P10$Primer
+data.scores$Pooling.method = ASVs_P8_P10$Pooling.method
+data.scores$Threshold = ASVs_P8_P10$Threshold
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Pooling.method, shape=Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank())  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + 
+    labs(x = "NMDS1", colour = "Pooling method", y = "NMDS2") + labs(title="Stress value 0.016") +  scale_colour_discrete(limits = c("P8", "P9", "P10"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/8B_Cow_primer_Bray_NMDS.jpeg", width=10, height=8)
+
+# now merge the species, put them back into the percentages 
+premerge<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/nemabiome_new/Percentage threshold master sheet.xlsx", col_names=TRUE, .name_repair="minimal")
+head(premerge)
+
+Merging_df<-as.data.frame(premerge)
+
+Merging_df
+
+df<-as.data.frame(lapply(split.default(Merging_df, names(Merging_df)), function(x) Reduce(`+`, x)))
+
+head(df)
+tail(df)
+
+write.xlsx(df, "merged ASVs threshold.xlsx")
+
+premerge<-read_excel("merged ASVs threshold.xlsx", col_names=TRUE, .name_repair="minimal")
+head(premerge)
+
+species<- subset(premerge, Coverage== "All reads")
+# we now have our raw data for species to convert into the thresholds
+
+species2<-adorn_percentages(species, denominator="row", na.rm=TRUE)
+
+head(species2)
+
+# now we put it all into percentages to compare it all
+write.xlsx(species2, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/all_reads_species.xlsx")
+
+# now the 0.05% cut off 
+species2[species2 <= 0.0005] <- 0
+
+pc<-adorn_percentages(species2, denominator="row", na.rm=TRUE)
+
+pc[is.na(pc)] <- 0
+
+write.xlsx(pc, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/0.05_cut_off_species_scrap.xlsx")
+
+# now the 0.5% cut off
+species2[species2 <= 0.005] <- 0
+
+pc2<-adorn_percentages(species2, denominator="row", na.rm=TRUE)
+
+pc2[is.na(pc2)] <- 0
+
+write.xlsx(pc2, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/0.5_cut_off_species_scrap.xlsx")
+
+# now the 1% cut off
+species2[species2 <= 0.01] <- 0
+
+pc3<-adorn_percentages(species2, denominator="row", na.rm=TRUE)
+
+pc3[is.na(pc3)] <- 0
+
+write.xlsx(pc3, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/1_cut_off_species_scrap.xlsx")
+
+# now the 2% cut off
+species2[species2 <= 0.02] <- 0
+
+pc4<-adorn_percentages(species2, denominator="row", na.rm=TRUE)
+
+pc4[is.na(pc4)] <- 0
+
+write.xlsx(pc4, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/scrap/2_cut_off_species_scrap.xlsx")
+
+#we merge the data sets in excel:
+sp_percent<-read_csv("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/Thresholds_master_sheet.csv", col_names=TRUE)
+str(sp_percent)
+head(sp_percent)
+tail(sp_percent)
+
+sp_percent$Threshold <- as.factor(sp_percent$Threshold)
+
+com = sp_percent[,5:ncol(sp_percent)]
+head(com)
+
+sp_percent$Threshold <- as.factor(sp_percent$Threshold)
+
+sp_P4<- subset(sp_percent, Pooling.method== "P4")
+sp_P5<- subset(sp_percent, Pooling.method== "P5")
+sp_P6<- subset(sp_percent, Pooling.method== "P6")
+sp_P7<- subset(sp_percent, Pooling.method== "P7")
+sp_P8<- subset(sp_percent, Pooling.method== "P8")
+sp_P9<- subset(sp_percent, Pooling.method== "P9")
+sp_P10<- subset(sp_percent, Pooling.method== "P10")
+
+sp_P4_P10<- rbind(sp_P4, sp_P5, sp_P6, sp_P7, sp_P8, sp_P9, sp_P10)
+
+tail(sp_P4_P10)
+
+sp_P4_P10<- gather(sp_P4_P10, Nematodes, Abundance, "Cooperia oncophora":"Trichostrongylus axei", factor_key=TRUE)
+
+sp_P4_P10$Pooling.method <- factor(sp_P4_P10$Pooling.method, levels = c("P4", "P5", "P6", "P7", "P8", "P9", "P10"))
+
+sp_P4_P10$Threshold <- factor(sp_P4_P10$Threshold, levels = c("All reads", "0.05%", "0.50%", "1%", "2%"))
+
+ggplot(sp_P4_P10, aes(fill = Nematodes, y = Abundance, x=factor(Pooling.method))) + theme(panel.background = element_blank(), strip.background = element_blank(),
+        strip.placement='outside',  axis.text.x=element_blank(), axis.ticks.x=element_blank())+ theme(axis.text.x=element_text(angle = -90, hjust = 0,vjust=0.5))+ 
+    labs(x = "Threshold", y = "Species abundance") +
+   facet_grid(Threshold~ Cow +Primer, scales= "free", space="free") + geom_bar(position="fill", stat = "identity") +
+  theme(axis.title.y = element_text(size = 8, face = "bold"), legend.title = element_text(size = 8, face = "bold"), 
+        legend.text = element_text(size = 8, face = "italic", colour = "black"), 
+        axis.text.y = element_text(colour = "black", size = 6, face = "bold")) + 
+  scale_y_continuous(expand = c(0,0)) + 
+  labs(x = "", y = "Relative Abundance (%)", fill = "Species") +
+  theme(
+        legend.box = "horizontal",
+        legend.title = element_blank(),
+        legend.key.size = unit(0.3, "cm"),
+        legend.position="bottom") 
+        
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/barchart_P4_P10_nema_cow_threshold.jpeg", width=10, height=8)
+
+# now for rarefaction
+# First up is the rarefication where the community is subsampled randomly for a depth of 2,000, 5,000, 10,000, 25,000 and all (in other words our control/ no treatment)
+raw<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Nemabiome_new/Coverage_master_file.xlsx", col_names=TRUE, .name_repair="minimal")
+head(raw)
+
+all<-raw[raw$Coverage == "All",]
+
+com = all[,5:ncol(all)]
+head(com)
+tail(com)
+
+com<- round(com)
+# had to do this step to turn it into a whole number dataset instead of decimal places, otherwise rrarefy wont work
+
+rare_25000<-rrarefy(com, 25000)
+# note some samples didnt have enough reads for this level of rarefaction so R just used the raw ranking.
+
+data.scores = as.data.frame(scores(rare_25000))
+
+data.scores$Cow = all$Cow
+data.scores$Primer = all$Primer
+data.scores$Pooling.method = all$Pooling.method
+
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "25000 rare file.csv")
+
+# now for 5000
+rare_5000<-rrarefy(com, 5000)
+
+data.scores = as.data.frame(scores(rare_5000))
+
+data.scores$Cow = all$Cow
+data.scores$Primer = all$Primer
+data.scores$Pooling.method = all$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "5000 rare file.csv")
+
+# now for the 10,000 rare
+rare_10000<-rrarefy(com, 10000)
+# note says some row sums < 'sample' and so are not rarefied 
+
+data.scores = as.data.frame(scores(rare_10000))
+
+data.scores$Cow = all$Cow
+data.scores$Primer = all$Primer
+data.scores$Pooling.method = all$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "10000 rare file.csv")
+
+# now for the 2,000 rare
+rare_2000<-rrarefy(com, 2000)
+# note says some row sums < 'sample' and so are not rarefied 
+
+data.scores = as.data.frame(scores(rare_2000))
+
+data.scores$Cow = all$Cow
+data.scores$Primer = all$Primer
+data.scores$Pooling.method = all$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "2000 rare file.csv")
+
+# finally to get the control I just need pinch it from the raw file and copy and paste it into the master file
+
+#this is to analyse the rarefied data #first we have to turn it into percentages otherwise the differencing sequencing depths will interfere with the BC dissimilarity index
+rare<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Master_rare_file.xlsx", col_names=TRUE, .name_repair="minimal")
+str(rare)
+head(rare)
+
+rare2<-adorn_percentages(rare, denominator="row", na.rm=TRUE)
+
+write.xlsx(rare2, "C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/rare_data_percent.xlsx")
+
+# now onto the data analysis now that it is in percent form
+rare<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/rare_data_percent.xlsx", col_names=TRUE, .name_repair="minimal")
+str(rare)
+head(rare)
+
+rare$Rare <- as.factor(rare$Rare)
+
+#first is all the betadisper stuff
+rare$Rare<-factor(rare$Rare, levels=c("2000", "5000", "10000", "25000", "All"))
+rare$Pooling.method<-factor(rare$Pooling.method, levels=c("P1", "P2", "P3", "P4", "P5","P6", "P7", "P8", "P9", "P10", "P11", "P12", "P13", "P14", "P15", "P16"))
+
+com = rare[,5:ncol(rare)]
+head(com)
+
+Rare_bray<-betadisper(vegdist(com, method="bray"), rare$Rare)
+anova(Rare_bray)
+
+plot(Rare_bray, main="Distance to centroid")
+
+Rare_bray<-betadisper(vegdist(com, method="bray"), rare$Pooling.method)
+anova(Rare_bray)
+
+plot(Rare_bray, main="Distance to centroid")
+
+Rare_bray<-betadisper(vegdist(com, method="bray"), rare$Primer)
+anova(Rare_bray)
+
+plot(Rare_bray, main="Distance to centroid")
+
+# everything insignificant for the betadisper bray so now to test the cow sampled
+Rare_bray<-betadisper(vegdist(com, method="bray"), rare$Cow)
+anova(Rare_bray)
+
+plot(Rare_bray, main="Distance to centroid")
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Nemabiome_new/graphs/PCoA_betadisper.jpeg", width=10, height=8)
+
+df_com<-as.data.frame(com)
+
+Jaccard<-vegdist(df_com, method="jaccard", binary=TRUE)
+
+adonis2(Jaccard ~ Cow + Primer + Pooling.method + Rare, rare, perm=200)
+
+# now lets give the bray stuff a go to see if it changes our results (skipped Jaccard since it is significant and thus can't be trusted)
+rare$Rare <- as.factor(rare$Rare)
+
+com = rare[,5:ncol(rare)]
+head(com)
+
+df_com<-as.data.frame(com)
+
+Bray<-vegdist(df_com, method="bray")
+adonis2(Bray ~ Cow + Primer + Pooling.method + Rare, rare, perm=200)
+
+m_com=as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = rare$Cow
+data.scores$Primer = rare$Primer
+data.scores$Pooling.method = rare$Pooling.method
+data.scores$Rare = rare$Rare
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+data.scores$Rare<-as.factor(data.scores$Rare)
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Rare), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Rarefaction level", y = "NMDS2", linetype="Cow sampled") + labs(title="Stress value 0.176")  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) +  scale_colour_discrete(limits = c("2000", "5000", "10000", "25000", "All reads"))
+    
+xx
+
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/Nemabiome_new/graphs/10A_cow_pooling_rare_bray_NMDS.jpeg", width=10, height=8)
+
+rare_merging<-read_excel("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/rare_data_percent.xlsx", col_names=TRUE, .name_repair="minimal")
+str(rare_merging) 
+head(rare_merging)
+
+Merging_df<-as.data.frame(rare_merging)
+
+Merging_df
+
+df<-as.data.frame(lapply(split.default(Merging_df, names(Merging_df)), function(x) Reduce(`+`, x)))
+
+head(df)
+tail(df)
+
+write.xlsx(df, "merged ASVs rarefied.xlsx")
+
+merged<-read_excel("merged ASVs rarefied.xlsx", col_names=TRUE, .name_repair="minimal")
+head(merged)
+tail(merged)
+
+merged$Rare <- as.factor(merged$Rare)
+
+com = rare[,5:ncol(rare)]
+head(com)
+
+df_com<-as.data.frame(com)
+
+Jaccard<-vegdist(df_com, method="jaccard", binary=TRUE)
+
+adonis2(Jaccard ~ Cow + Primer + Pooling.method + Rare, merged, perm=200)
+
+Bray<-vegdist(df_com, method="bray")
+
+adonis2(Bray ~ Cow + Primer + Pooling.method + Rare, merged, perm=200)
+
+com = merged[,5:ncol(merged)]
+head(com)
+
+merged$Rare <- as.factor(merged$Rare)
+
+tail(merged)
+
+sp_P4<- subset(merged, Pooling.method== "P4")
+sp_P5<- subset(merged, Pooling.method== "P5")
+sp_P6<- subset(merged, Pooling.method== "P6")
+sp_P7<- subset(merged, Pooling.method== "P7")
+sp_P8<- subset(merged, Pooling.method== "P8")
+sp_P9<- subset(merged, Pooling.method== "P9")
+sp_P10<- subset(merged, Pooling.method== "P10")
+
+sp_P4_P10<- rbind(sp_P4, sp_P5, sp_P6, sp_P7, sp_P8, sp_P9, sp_P10)
+
+tail(sp_P4_P10)
+
+sp_P4_P10<- gather(sp_P4_P10, Nematodes, Abundance, "Cooperia oncophora":"Trichostrongylus axei", factor_key=TRUE)
+
+sp_P4_P10$Pooling.method <- factor(sp_P4_P10$Pooling.method, levels = c("P4", "P5", "P6", "P7", "P8", "P9", "P10"))
+
+sp_P4_P10$Rare <- factor(sp_P4_P10$Rare, levels = c("2000", "5000", "10000", "25000", "All reads"))
+
+
+ggplot(sp_P4_P10, aes(fill = Nematodes, y = Abundance, x=factor(Pooling.method))) + theme(panel.background = element_blank(), strip.background = element_blank(),
+        strip.placement='outside',  axis.text.x=element_blank(), axis.ticks.x=element_blank())+ theme(axis.text.x=element_text(angle = -90, hjust = 0,vjust=0.5))+ 
+    labs(x = "Rarefied level", y = "Species abundance") +
+   facet_grid(Rare~ Cow +Primer, scales= "free", space="free") + geom_bar(position="fill", stat = "identity") +
+  theme(axis.title.y = element_text(size = 8, face = "bold"), legend.title = element_text(size = 8, face = "bold"), 
+        legend.text = element_text(size = 8, face = "italic", colour = "black"), 
+        axis.text.y = element_text(colour = "black", size = 6, face = "bold")) + 
+  scale_y_continuous(expand = c(0,0)) + 
+  labs(x = "", y = "Relative Abundance (%)", fill = "Species") +
+  theme(
+        legend.box = "horizontal",
+        legend.title = element_blank(),
+        legend.key.size = unit(0.3, "cm"),
+        legend.position="bottom") 
+        
+ggsave("C:/Users/tsto3616/OneDrive - The University of Sydney (Staff)/Desktop/Nemabiome/new_nemabiome_2024/graphs/11_barchart_P4_P10_nema_cow_rare.jpeg", width=10, height=8)
+
+
